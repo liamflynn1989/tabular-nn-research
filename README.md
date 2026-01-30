@@ -160,11 +160,32 @@ out = temporal_model(x_num, time_idx)
 
 ## Adding New Models
 
-1. Create implementation in `models/`
-2. Follow the base interface in `models/base.py`
-3. Add factory function in `benchmarks/run_benchmarks.py`
-4. Run benchmarks to compare performance
-5. Update this README with results
+When implementing a new paper/model, follow these steps:
+
+1. **Create implementation** in `models/`
+   - Follow the base interface in `models/base.py`
+   - Export the model in `models/__init__.py`
+
+2. **Add to benchmarks** in `benchmarks/run_benchmarks.py`
+   - Import the new model
+   - Add a factory function (e.g., `make_newmodel`)
+   - Add to the factories dict
+
+3. **Run benchmarks** to generate results:
+   ```bash
+   python benchmarks/run_benchmarks.py
+   ```
+   (Only the new model will run - existing results are cached)
+
+4. **Update README.md**
+   - Add the new model to the Benchmark Results table
+   - Add the new model to the Leaderboard
+   - Add a description in the Implemented Models section
+   - Add the citation in References
+
+5. **Create tutorial** (optional) in `tutorials/`
+   - Explain how the model works
+   - Include visualizations and examples
 
 ## References
 

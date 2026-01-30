@@ -5,6 +5,8 @@ Run benchmarks for all models on all datasets.
 Usage:
     python benchmarks/run_benchmarks.py
     python benchmarks/run_benchmarks.py --n-samples 10000 --epochs 200
+    python benchmarks/run_benchmarks.py --force  # Re-run all, ignore cache
+    python benchmarks/run_benchmarks.py --models MLP TabM  # Run specific models
 """
 
 import sys
@@ -88,9 +90,13 @@ def main():
     parser.add_argument('--patience', type=int, default=10,
                         help='Early stopping patience')
     parser.add_argument('--output', type=str, default='benchmarks/results.json',
-                        help='Output file for results')
+                        help='Output file for results (also used as cache)')
     parser.add_argument('--datasets', nargs='+', default=None,
                         help='Specific datasets to run (default: all)')
+    parser.add_argument('--models', nargs='+', default=None,
+                        help='Specific models to run (default: all)')
+    parser.add_argument('--force', action='store_true',
+                        help='Ignore cache and re-run all benchmarks')
     args = parser.parse_args()
 
     print("="*60)
@@ -99,15 +105,28 @@ def main():
     print(f"Device: {torch.device('cuda' if torch.cuda.is_available() else 'cpu')}")
     print(f"Samples per dataset: {args.n_samples}")
     print(f"Max epochs: {args.epochs}")
+    if args.force:
+        print("Force mode: ignoring cache")
 
     runner = BenchmarkRunner(
         n_epochs=args.epochs,
         batch_size=args.batch_size,
         patience=args.patience,
         verbose=True,
+        cache_file=args.output,
+        force=args.force,
     )
 
     factories = create_model_factories()
+
+    # Filter models if specified
+    if args.models:
+        available = set(factories.keys())
+        requested = set(args.models)
+        invalid = requested - available
+        if invalid:
+            print(f"Warning: Unknown models {invalid}, available: {available}")
+        factories = {k: v for k, v in factories.items() if k in requested}
 
     # Run all benchmarks
     results = runner.run_all(

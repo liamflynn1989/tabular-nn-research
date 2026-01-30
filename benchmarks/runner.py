@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 import numpy as np
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, Set, Tuple
 import time
 import json
 from pathlib import Path
@@ -44,10 +44,28 @@ class BenchmarkResult:
             "config": self.config,
         }
 
+    @classmethod
+    def from_dict(cls, d: Dict) -> "BenchmarkResult":
+        return cls(
+            model_name=d["model_name"],
+            dataset_name=d["dataset_name"],
+            train_mse=d["train_mse"],
+            val_mse=d["val_mse"],
+            test_mse=d["test_mse"],
+            test_rmse=d["test_rmse"],
+            test_mae=d["test_mae"],
+            train_time=d["train_time"],
+            n_parameters=d["n_parameters"],
+            config=d.get("config", {}),
+        )
+
 
 class BenchmarkRunner:
     """
     Run benchmarks comparing different models on different datasets.
+
+    Supports caching: previously computed results are loaded from cache_file
+    and only new model/dataset combinations are run.
     """
 
     def __init__(
@@ -59,7 +77,22 @@ class BenchmarkRunner:
         weight_decay: float = 1e-4,
         patience: int = 10,
         verbose: bool = True,
+        cache_file: Optional[str] = None,
+        force: bool = False,
     ):
+        """
+        Args:
+            device: Device to use ("auto", "cpu", "cuda")
+            n_epochs: Maximum training epochs
+            batch_size: Batch size for training
+            learning_rate: Learning rate
+            weight_decay: Weight decay for AdamW
+            patience: Early stopping patience
+            verbose: Print progress
+            cache_file: Path to cache file (JSON). If provided, loads cached results
+                       and skips already-computed model/dataset pairs.
+            force: If True, ignore cache and re-run all benchmarks
+        """
         if device == "auto":
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -71,7 +104,42 @@ class BenchmarkRunner:
         self.weight_decay = weight_decay
         self.patience = patience
         self.verbose = verbose
+        self.cache_file = cache_file
+        self.force = force
         self.results: List[BenchmarkResult] = []
+        self._cached_keys: Set[Tuple[str, str]] = set()
+
+        # Load cached results if available
+        if cache_file and not force:
+            self._load_cache()
+
+    def _load_cache(self) -> None:
+        """Load cached results from file."""
+        cache_path = Path(self.cache_file)
+        if cache_path.exists():
+            try:
+                with open(cache_path) as f:
+                    data = json.load(f)
+                for d in data:
+                    result = BenchmarkResult.from_dict(d)
+                    self.results.append(result)
+                    self._cached_keys.add((result.model_name, result.dataset_name))
+                if self.verbose:
+                    print(f"Loaded {len(self.results)} cached results from {self.cache_file}")
+            except (json.JSONDecodeError, KeyError) as e:
+                if self.verbose:
+                    print(f"Warning: Could not load cache ({e}), starting fresh")
+
+    def is_cached(self, model_name: str, dataset_name: str) -> bool:
+        """Check if a model/dataset combination is already cached."""
+        return (model_name, dataset_name) in self._cached_keys
+
+    def get_cached_result(self, model_name: str, dataset_name: str) -> Optional[BenchmarkResult]:
+        """Get cached result for a model/dataset combination."""
+        for r in self.results:
+            if r.model_name == model_name and r.dataset_name == dataset_name:
+                return r
+        return None
 
     def _create_dataloaders(self, dataset, train_ratio=0.7, val_ratio=0.15):
         """Split dataset and create dataloaders."""
@@ -263,6 +331,8 @@ class BenchmarkRunner:
         """
         Run benchmarks for all model-dataset combinations.
 
+        Skips combinations that are already cached (unless force=True).
+
         Args:
             model_factories: Dict mapping model names to factory functions
                              Factory signature: (dataset_info) -> model
@@ -270,12 +340,39 @@ class BenchmarkRunner:
             n_samples: Number of samples per dataset
 
         Returns:
-            List of all BenchmarkResults
+            List of all BenchmarkResults (including cached)
         """
         if dataset_names is None:
             dataset_names = list_datasets()
 
+        # Count what needs to be run
+        total_pairs = len(dataset_names) * len(model_factories)
+        cached_count = sum(
+            1 for d in dataset_names for m in model_factories
+            if self.is_cached(m, d)
+        )
+        to_run = total_pairs - cached_count
+
+        if self.verbose:
+            print(f"\nBenchmark pairs: {total_pairs} total, {cached_count} cached, {to_run} to run")
+
+        if to_run == 0:
+            if self.verbose:
+                print("All results cached. Use --force to re-run.")
+            return self.results
+
         for dataset_name in dataset_names:
+            # Check if any models need to run for this dataset
+            models_to_run = [
+                (name, factory) for name, factory in model_factories.items()
+                if not self.is_cached(name, dataset_name)
+            ]
+
+            if not models_to_run:
+                if self.verbose:
+                    print(f"\nDataset: {dataset_name} (all cached, skipping)")
+                continue
+
             if self.verbose:
                 print(f"\n{'='*50}")
                 print(f"Dataset: {dataset_name}")
@@ -284,6 +381,12 @@ class BenchmarkRunner:
             dataset = load_dataset(dataset_name, n_samples=n_samples)
 
             for model_name, factory in model_factories.items():
+                if self.is_cached(model_name, dataset_name):
+                    if self.verbose:
+                        cached = self.get_cached_result(model_name, dataset_name)
+                        print(f"\nModel: {model_name} (cached, test_rmse={cached.test_rmse:.4f})")
+                    continue
+
                 if self.verbose:
                     print(f"\nModel: {model_name}")
 
