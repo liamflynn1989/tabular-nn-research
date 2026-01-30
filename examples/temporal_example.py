@@ -18,8 +18,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple
 
-from implementations import TemporalTabularModel, create_temporal_model
-from implementations.base import MLP
+from models import TemporalTabularModel
+from models.base import MLP
 
 
 def generate_temporal_data(

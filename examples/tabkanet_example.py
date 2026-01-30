@@ -20,7 +20,7 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 import argparse
 
-from implementations.tabkanet import TabKANet
+from models.tabkanet import TabKANet
 
 
 class TabularDataset(Dataset):
