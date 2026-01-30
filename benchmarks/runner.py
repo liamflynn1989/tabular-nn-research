@@ -13,7 +13,7 @@ import time
 import json
 from pathlib import Path
 
-from data import load_dataset, list_datasets
+from data.datasets import load_dataset, list_datasets
 
 
 @dataclass

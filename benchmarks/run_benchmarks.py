@@ -8,13 +8,16 @@ Usage:
 """
 
 import sys
-sys.path.insert(0, '..')
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import argparse
 import torch
 
-from runner import BenchmarkRunner
-from utils import format_results_table, format_leaderboard, save_results
+from benchmarks.runner import BenchmarkRunner
+from benchmarks.utils import format_results_table, format_leaderboard, save_results
 
 from models import TabM, TabKANet, TemporalTabularModel
 from models.base import MLP

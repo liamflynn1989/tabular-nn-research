@@ -6,23 +6,27 @@ A collection of implementations and experiments with state-of-the-art neural net
 
 Performance comparison on synthetic regression datasets (Test RMSE, lower is better):
 
-| Model | friedman | nonlinear_interaction | high_dimensional | temporal_drift | mixed_type | Avg |
-|-------|----------|----------------------|------------------|----------------|------------|-----|
-| MLP | - | - | - | - | - | - |
-| TabM | - | - | - | - | - | - |
-| TabKANet | - | - | - | - | - | - |
-| Temporal | - | - | - | - | - | - |
-
-*Run `python benchmarks/run_benchmarks.py` to generate results.*
+| Model | friedman | nonlinear | high_dim | temporal | mixed | Avg |
+|-------|----------|-----------|----------|----------|-------|------|
+| MLP | 1.2291 | 0.8576 | 1.3678 | 1.2371 | 1.9788 | 1.3341 |
+| TabM | 1.1466 | **0.8396** | 1.4507 | 1.2395 | **1.9651** | 1.3283 |
+| TabKANet | 1.2948 | 1.1329 | 2.6319 | 1.3976 | 2.2801 | 1.7475 |
+| Temporal | **1.1297** | 0.8741 | **1.1896** | **0.6139** | 2.0644 | **1.1743** |
 
 ### Leaderboard
 
 | Rank | Model | Avg RMSE |
 |------|-------|----------|
-| 1 | - | - |
-| 2 | - | - |
-| 3 | - | - |
-| 4 | - | - |
+| 1 | Temporal | **1.1743** |
+| 2 | TabM | 1.3283 |
+| 3 | MLP | 1.3341 |
+| 4 | TabKANet | 1.7475 |
+
+**Key findings:**
+- **Temporal** model excels on datasets with temporal structure and high-dimensional data
+- **TabM** performs consistently well across all datasets
+- **MLP** baseline remains competitive, especially on simpler datasets
+- **TabKANet** underperforms on these synthetic benchmarks (may need hyperparameter tuning)
 
 ## Implemented Models
 
