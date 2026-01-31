@@ -182,6 +182,9 @@ class BenchmarkRunner:
                 pred = model(x_num, time_idx)
             elif x_cat is not None and hasattr(model, 'cat_embeddings'):
                 pred = model(x_num, x_cat)
+            elif hasattr(model, '_add_candidates'):
+                # TabR: pass labels for candidate accumulation
+                pred = model(x_num, y_for_candidates=y)
             else:
                 pred = model(x_num)
 

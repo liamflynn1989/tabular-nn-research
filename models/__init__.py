@@ -8,6 +8,7 @@ from .base import TabularModel
 from .tabm import TabM
 from .temporal_modulation import TemporalTabularModel, FiLMLayer, TemporalEncoder
 from .tabkanet import TabKANet, KANLinear, NumericalEmbeddingKAN
+from .tabr import TabR, NumericalEmbeddings, RetrievalModule
 
 __all__ = [
     "TabularModel",
@@ -18,4 +19,7 @@ __all__ = [
     "TabKANet",
     "KANLinear",
     "NumericalEmbeddingKAN",
+    "TabR",
+    "NumericalEmbeddings",
+    "RetrievalModule",
 ]

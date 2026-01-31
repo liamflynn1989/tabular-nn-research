@@ -238,5 +238,65 @@
     "train_time": 1.6419923305511475,
     "n_parameters": 50309,
     "config": {}
+  },
+  {
+    "model_name": "TabR",
+    "dataset_name": "friedman",
+    "train_mse": 1.260399145739419,
+    "val_mse": 1.2735123812357585,
+    "test_mse": 1.2466545756657919,
+    "test_rmse": 1.1165368671323808,
+    "test_mae": 0.8900855305989583,
+    "train_time": 53.97859263420105,
+    "n_parameters": 405441,
+    "config": {}
+  },
+  {
+    "model_name": "TabR",
+    "dataset_name": "nonlinear_interaction",
+    "train_mse": 0.2639917028801782,
+    "val_mse": 0.6206617163022359,
+    "test_mse": 0.594205488204956,
+    "test_rmse": 0.7708472534847328,
+    "test_mae": 0.5721610310872396,
+    "train_time": 42.02273488044739,
+    "n_parameters": 755721,
+    "config": {}
+  },
+  {
+    "model_name": "TabR",
+    "dataset_name": "high_dimensional",
+    "train_mse": 45.612724849155974,
+    "val_mse": 41.0720988667806,
+    "test_mse": 43.737103312174476,
+    "test_rmse": 6.613403307841922,
+    "test_mae": 5.292921061197917,
+    "train_time": 90.9010009765625,
+    "n_parameters": 24336081,
+    "config": {}
+  },
+  {
+    "model_name": "TabR",
+    "dataset_name": "temporal_drift",
+    "train_mse": 1.0819213730948312,
+    "val_mse": 1.4591482117970784,
+    "test_mse": 1.5500613530476888,
+    "test_rmse": 1.2450145995319448,
+    "test_mae": 0.9612218017578125,
+    "train_time": 15.680299997329712,
+    "n_parameters": 405441,
+    "config": {}
+  },
+  {
+    "model_name": "TabR",
+    "dataset_name": "mixed_type",
+    "train_mse": 3.3827500683920726,
+    "val_mse": 3.786074052810669,
+    "test_mse": 4.224401820500692,
+    "test_rmse": 2.05533496552282,
+    "test_mae": 1.6296393636067708,
+    "train_time": 12.468037843704224,
+    "n_parameters": 405441,
+    "config": {}
   }
 ]

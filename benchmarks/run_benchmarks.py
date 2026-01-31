@@ -21,7 +21,7 @@ import torch
 from benchmarks.runner import BenchmarkRunner
 from benchmarks.utils import format_results_table, format_leaderboard, save_results
 
-from models import TabM, TabKANet, TemporalTabularModel
+from models import TabM, TabKANet, TemporalTabularModel, TabR
 from models.base import MLP
 
 
@@ -72,11 +72,25 @@ def create_model_factories():
             dropout=0.1,
         )
 
+    def make_tabr(info):
+        return TabR(
+            d_in=info.n_numerical,
+            d_out=1,
+            d_embedding=24,
+            d_block=128,
+            n_blocks=2,
+            n_heads=4,
+            k_neighbors=64,
+            dropout=0.1,
+            max_candidates=3000,
+        )
+
     return {
         "MLP": make_mlp,
         "TabM": make_tabm,
         "TabKANet": make_tabkanet,
         "Temporal": make_temporal,
+        "TabR": make_tabr,
     }
 
 

@@ -9,28 +9,49 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 | Model | friedman | nonlinear | high_dim | temporal | mixed | Avg |
 |-------|----------|-----------|----------|----------|-------|------|
 | MLP | 1.2291 | 0.8576 | 1.3678 | 1.2371 | 1.9788 | 1.3341 |
-| TabM | 1.1466 | **0.8396** | 1.4507 | 1.2395 | **1.9651** | 1.3283 |
+| TabM | 1.1466 | 0.8396 | 1.4507 | 1.2395 | **1.9651** | 1.3283 |
 | TabKANet | 1.2948 | 1.1329 | 2.6319 | 1.3976 | 2.2801 | 1.7475 |
-| Temporal | **1.1297** | 0.8741 | **1.1896** | **0.6139** | 2.0644 | **1.1743** |
+| TabR | **1.1165** | **0.7708** | 6.6134 | 1.2450 | 2.0553 | 2.3602 |
+| Temporal | 1.1297 | 0.8741 | **1.1896** | **0.6139** | 2.0644 | **1.1743** |
 
 ### Leaderboard
 
-| Rank | Model | Avg RMSE |
-|------|-------|----------|
-| 1 | Temporal | **1.1743** |
-| 2 | TabM | 1.3283 |
-| 3 | MLP | 1.3341 |
-| 4 | TabKANet | 1.7475 |
+| Rank | Model | Avg RMSE | Notes |
+|------|-------|----------|-------|
+| 🥇 | Temporal | **1.1743** | Best for temporal data |
+| 🥈 | TabM | 1.3283 | Consistent across all datasets |
+| 🥉 | MLP | 1.3341 | Strong baseline |
+| 4 | TabKANet | 1.7475 | Needs tuning |
+| 5 | TabR | 2.3602 | Best on low-dim, struggles with high-dim |
 
 **Key findings:**
 - **Temporal** model excels on datasets with temporal structure and high-dimensional data
 - **TabM** performs consistently well across all datasets
+- **TabR** achieves best results on friedman and nonlinear_interaction, but struggles with very high-dimensional data (curse of dimensionality affects retrieval)
 - **MLP** baseline remains competitive, especially on simpler datasets
 - **TabKANet** underperforms on these synthetic benchmarks (may need hyperparameter tuning)
 
 ## Implemented Models
 
-### 1. TabKANet: KAN-based Numerical Embeddings (Knowledge-Based Systems 2025)
+### 1. TabR: Retrieval-Augmented Tabular Learning (ICLR 2024)
+**Paper:** [arXiv:2307.14338](https://arxiv.org/abs/2307.14338)
+
+Combines deep learning with k-NN-style retrieval from training data. For each prediction, retrieves similar training examples and uses attention to aggregate their information.
+
+**Key Features:**
+- Soft attention-based retrieval (differentiable end-to-end)
+- Uses both features and labels from retrieved neighbors
+- Excellent for finding similar historical patterns (regime detection)
+- Best performance on moderate-dimensional data
+
+**HFT/MFT Relevance:**
+- Finds similar historical market patterns
+- Explainable via retrieved neighbors (regulatory compliance)
+- Implicit ensemble benefits for noise handling
+
+⚠️ **Note:** TabR struggles with very high-dimensional data due to the curse of dimensionality affecting k-NN retrieval. Consider dimensionality reduction for datasets with 50+ features.
+
+### 2. TabKANet: KAN-based Numerical Embeddings (Knowledge-Based Systems 2025)
 **Paper:** [arXiv:2409.08806](https://arxiv.org/abs/2409.08806)
 
 Uses Kolmogorov-Arnold Networks (KAN) with learnable B-spline activation functions to embed numerical features.
@@ -40,7 +61,7 @@ Uses Kolmogorov-Arnold Networks (KAN) with learnable B-spline activation functio
 - Transformer encoder for feature interactions
 - Supports both numerical and categorical features
 
-### 2. TabM: Parameter-Efficient Ensembling (ICLR 2025)
+### 3. TabM: Parameter-Efficient Ensembling (ICLR 2025)
 **Paper:** [arXiv:2410.24210](https://arxiv.org/abs/2410.24210)
 
 Efficiently imitates an ensemble of MLPs using batch-like computation with weight sharing.
@@ -50,7 +71,7 @@ Efficiently imitates an ensemble of MLPs using batch-like computation with weigh
 - Simple MLP backbone with BatchEnsemble-style computation
 - State-of-the-art performance among tabular DL models
 
-### 3. Feature-aware Temporal Modulation (NeurIPS 2025)
+### 4. Feature-aware Temporal Modulation (NeurIPS 2025)
 **Paper:** [arXiv:2512.03678](https://arxiv.org/abs/2512.03678)
 
 Addresses temporal distribution shifts by conditioning feature representations on temporal context.
@@ -69,6 +90,7 @@ tabular-nn-research/
 │   ├── base.py                 # Shared base classes (MLP, etc.)
 │   ├── tabkanet.py             # TabKANet (KAN + Transformer)
 │   ├── tabm.py                 # TabM (parameter-efficient ensembling)
+│   ├── tabr.py                 # TabR (retrieval-augmented)
 │   └── temporal_modulation.py  # Feature-aware temporal modulation
 ├── data/                       # Synthetic datasets for benchmarking
 │   ├── __init__.py
@@ -79,6 +101,9 @@ tabular-nn-research/
 │   ├── utils.py                # Result formatting utilities
 │   ├── run_benchmarks.py       # Main benchmark script
 │   └── results.json            # Benchmark results (generated)
+├── tutorials/                  # Jupyter notebooks explaining models
+│   ├── 01_temporal_modulation.ipynb
+│   └── 02_tabr_retrieval.ipynb
 ├── examples/                   # Usage examples
 │   ├── tabkanet_example.py
 │   ├── tabm_example.py
@@ -117,13 +142,37 @@ python benchmarks/run_benchmarks.py
 ### Basic Usage
 
 ```python
-from models import TabKANet, TabM, TemporalTabularModel
+from models import TabKANet, TabM, TemporalTabularModel, TabR
 from data import load_dataset
 import torch
 
 # Load a dataset
 dataset = load_dataset("friedman", n_samples=5000)
 print(dataset.info)
+
+# TabR - Retrieval-augmented model
+tabr = TabR(
+    d_in=10,
+    d_out=1,
+    d_embedding=32,
+    d_block=256,
+    n_blocks=2,
+    k_neighbors=96,
+)
+
+x_num = torch.randn(32, 10)
+y = torch.randn(32)
+
+# Training: pass y to accumulate candidates
+tabr.train()
+out = tabr(x_num, y_for_candidates=y)
+
+# Inference: uses accumulated candidates automatically
+tabr.eval()
+out = tabr(x_num)  # Shape: (32, 1)
+
+# Get nearest neighbors for interpretability
+indices, distances, labels = tabr.get_nearest_neighbors(x_num, k=5)
 
 # TabKANet - KAN-based embeddings with Transformer
 tabkanet = TabKANet(
@@ -132,8 +181,6 @@ tabkanet = TabKANet(
     n_heads=4,
     n_layers=2,
 )
-
-x_num = torch.randn(32, 10)
 out = tabkanet(x_num)  # Shape: (32, 1)
 
 # TabM - Parameter-efficient ensemble
@@ -144,7 +191,6 @@ tabm = TabM(
     d_block=256,
     n_heads=16,
 )
-
 out = tabm(x_num)  # Shape: (32, 1)
 
 # Temporal Modulation - For time-varying data
@@ -153,7 +199,6 @@ temporal_model = TemporalTabularModel(
     d_out=1,
     d_time=8,
 )
-
 time_idx = torch.arange(32)
 out = temporal_model(x_num, time_idx)
 ```
@@ -190,6 +235,13 @@ When implementing a new paper/model, follow these steps:
 ## References
 
 ```bibtex
+@inproceedings{gorishniy2024tabr,
+  title={TabR: Tabular Deep Learning Meets Nearest Neighbors in 2023},
+  author={Gorishniy, Yury and Rubachev, Ivan and Kartashev, Nikolay and Shlenskii, Daniil and Babenko, Artem},
+  booktitle={ICLR},
+  year={2024}
+}
+
 @article{GAO2025114697,
   title = {Revisiting the numerical feature embeddings structure in neural network-based tabular modelling},
   journal = {Knowledge-Based Systems},
