@@ -11,6 +11,40 @@ This is a research repository for tabular neural network architectures. It conta
 - Benchmark runner with caching in `benchmarks/`
 - Tutorials explaining models in `tutorials/`
 
+## Research Focus
+
+**Primary application:** High-Frequency Trading (HFT) and Medium-Frequency Trading (MFT) stock price prediction using tabular data.
+
+When selecting papers to implement, prioritize architectures that address these challenges:
+
+| Challenge                     | Description                                           | Relevant Techniques                                      |
+| ----------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| **Low signal-to-noise ratio** | Financial signals are weak relative to noise          | Regularization, ensembling, robust loss functions        |
+| **Non-stationarity**          | Data distribution changes over time (concept drift)   | Temporal modulation, online learning, adaptive methods   |
+| **High dimensionality**       | Many features (technical indicators, order book data) | Feature selection, attention mechanisms, sparse methods  |
+| **Correlated features**       | Features are often highly correlated                  | Decorrelation, PCA-like embeddings, feature interactions |
+| **Non-linear relationships**  | Complex, non-linear feature-target relationships      | KAN, polynomial features, deep networks                  |
+| **Temporal dependencies**     | Past values influence future predictions              | Recurrent components, temporal encodings                 |
+| **Class imbalance**           | Rare but important events (large moves)               | Focal loss, oversampling, cost-sensitive learning        |
+
+### Paper Selection Criteria
+
+When asked to find or implement new papers, look for:
+
+1. **Tabular-specific architectures** - Not just adapted vision/NLP models
+2. **State-of-the-art on tabular benchmarks** - Check performance on standard datasets
+3. **Addresses our challenges** - Particularly non-stationarity, noise, and high dimensionality
+4. **Regression focus** - We care about regression more than classification
+5. **Computational efficiency** - Must be practical for real-time inference
+6. **Recent publications** - Prefer papers from 2023-2025, top venues (NeurIPS, ICML, ICLR, KDD)
+
+### Example Good Papers
+
+- Temporal modulation methods (handle non-stationarity)
+- Ensemble methods like TabM (handle noise via diversity)
+- KAN-based embeddings (capture non-linear relationships)
+- Attention mechanisms for feature selection (handle high dimensionality)
+
 ## When Adding a New Paper/Model
 
 **IMPORTANT:** When implementing a new paper, you MUST complete ALL of these steps:
