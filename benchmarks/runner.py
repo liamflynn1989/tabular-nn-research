@@ -185,6 +185,9 @@ class BenchmarkRunner:
             elif hasattr(model, '_add_candidates'):
                 # TabR: pass labels for candidate accumulation
                 pred = model(x_num, y_for_candidates=y)
+            elif hasattr(model, '_is_setup') and model._is_setup:
+                # iLTM and similar models that are already setup
+                pred = model(x_num)
             else:
                 pred = model(x_num)
 
@@ -259,6 +262,21 @@ class BenchmarkRunner:
         train_loader, val_loader, test_loader = self._create_dataloaders(dataset)
 
         model = model.to(self.device)
+        
+        # Handle models that need setup (e.g., iLTM)
+        if hasattr(model, 'setup') and callable(model.setup):
+            # Collect all training data for setup
+            all_x = []
+            all_y = []
+            for batch in train_loader:
+                all_x.append(batch['x_num'])
+                all_y.append(batch['y'])
+            X_train = torch.cat(all_x, dim=0).to(self.device)
+            y_train = torch.cat(all_y, dim=0).to(self.device)
+            model.setup(X_train, y_train)
+            # Also set candidates for retrieval
+            if hasattr(model, 'set_candidates'):
+                model.set_candidates(X_train, y_train)
         n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
         optimizer = optim.AdamW(

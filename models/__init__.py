@@ -15,6 +15,21 @@ from .temporal_modulation import (
 )
 from .tabkanet import TabKANet, KANLinear, NumericalEmbeddingKAN
 from .tabr import TabR, NumericalEmbeddings, RetrievalModule
+from .numerical_embeddings import (
+    MLPPLR,
+    PiecewiseLinearEncoding,
+    PiecewiseLinearEmbeddings,
+    PeriodicEmbeddings,
+    compute_bins,
+    create_mlpplr,
+)
+from .iltm import (
+    iLTM,
+    TreeEmbedding,
+    RandomFeatureProjection,
+    SoftRetrievalModule,
+    create_iltm,
+)
 
 __all__ = [
     "TabularModel",
@@ -30,4 +45,17 @@ __all__ = [
     "TabR",
     "NumericalEmbeddings",
     "RetrievalModule",
+    # Numerical Embeddings (NeurIPS 2022)
+    "MLPPLR",
+    "PiecewiseLinearEncoding",
+    "PiecewiseLinearEmbeddings",
+    "PeriodicEmbeddings",
+    "compute_bins",
+    "create_mlpplr",
+    # iLTM (arXiv 2511.15941)
+    "iLTM",
+    "TreeEmbedding",
+    "RandomFeatureProjection",
+    "SoftRetrievalModule",
+    "create_iltm",
 ]

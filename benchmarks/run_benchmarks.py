@@ -21,7 +21,7 @@ import torch
 from benchmarks.runner import BenchmarkRunner
 from benchmarks.utils import format_results_table, format_leaderboard, save_results
 
-from models import TabM, TabKANet, TemporalTabularModel, TabR
+from models import TabM, TabKANet, TemporalTabularModel, TabR, MLPPLR, compute_bins, iLTM
 from models.base import MLP
 
 
@@ -85,12 +85,48 @@ def create_model_factories():
             max_candidates=3000,
         )
 
+    def make_mlpplr(info):
+        """MLP with Periodic Embeddings (MLP-PLR from NeurIPS 2022)."""
+        return MLPPLR(
+            d_in=info.n_numerical,
+            d_out=1,
+            d_embedding=24,
+            embedding_type="periodic",
+            n_blocks=3,
+            d_block=128,
+            dropout=0.1,
+            n_frequencies=48,
+            frequency_init_scale=0.01,
+            lite=True,
+        )
+
+    def make_iltm(info):
+        """iLTM: Integrated Large Tabular Model (arXiv 2511.15941).
+        
+        Combines tree embeddings, hypernetwork conditioning, and retrieval.
+        Note: This is a simplified version without pretrained weights.
+        """
+        return iLTM(
+            d_in=info.n_numerical,
+            d_out=1,
+            d_main=256,  # Smaller for benchmarks
+            n_blocks=2,
+            n_estimators=50,  # Fewer trees for speed
+            k_neighbors=32,
+            retrieval_alpha=0.3,
+            dropout=0.1,
+            use_tree_embedding=True,
+            task="regression",
+        )
+
     return {
         "MLP": make_mlp,
         "TabM": make_tabm,
         "TabKANet": make_tabkanet,
         "Temporal": make_temporal,
         "TabR": make_tabr,
+        "MLPPLR": make_mlpplr,
+        "iLTM": make_iltm,
     }
 
 
