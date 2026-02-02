@@ -30,6 +30,14 @@ from .iltm import (
     SoftRetrievalModule,
     create_iltm,
 )
+from .amformer import (
+    AMFormer,
+    AdditiveAttention,
+    MultiplicativeAttention,
+    AMFormerLayer,
+    TokenDescent,
+    create_amformer,
+)
 
 __all__ = [
     "TabularModel",
@@ -58,4 +66,11 @@ __all__ = [
     "RandomFeatureProjection",
     "SoftRetrievalModule",
     "create_iltm",
+    # AMFormer (AAAI 2024)
+    "AMFormer",
+    "AdditiveAttention",
+    "MultiplicativeAttention",
+    "AMFormerLayer",
+    "TokenDescent",
+    "create_amformer",
 ]

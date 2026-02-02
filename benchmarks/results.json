@@ -418,5 +418,65 @@
     "train_time": 4.993092775344849,
     "n_parameters": 462593,
     "config": {}
+  },
+  {
+    "model_name": "AMFormer",
+    "dataset_name": "friedman",
+    "train_mse": 25.96909441266741,
+    "val_mse": 24.44357145690918,
+    "test_mse": 24.46691149902344,
+    "test_rmse": 4.946403895662327,
+    "test_mae": 4.01732861328125,
+    "train_time": 48.09718298912048,
+    "n_parameters": 256580,
+    "config": {}
+  },
+  {
+    "model_name": "AMFormer",
+    "dataset_name": "nonlinear_interaction",
+    "train_mse": 1.3254647254943848,
+    "val_mse": 1.4618336143493653,
+    "test_mse": 1.554846079826355,
+    "test_rmse": 1.2469346734397737,
+    "test_mae": 0.8261571858723958,
+    "train_time": 88.15565896034241,
+    "n_parameters": 257348,
+    "config": {}
+  },
+  {
+    "model_name": "AMFormer",
+    "dataset_name": "high_dimensional",
+    "train_mse": 3.1029045241219655,
+    "val_mse": 3.4870262044270834,
+    "test_mse": 3.6196957321166994,
+    "test_rmse": 1.9025497975392653,
+    "test_mae": 1.4411556803385417,
+    "train_time": 248.26377606391907,
+    "n_parameters": 362500,
+    "config": {}
+  },
+  {
+    "model_name": "AMFormer",
+    "dataset_name": "temporal_drift",
+    "train_mse": 1.4857135840824671,
+    "val_mse": 1.3876443745295206,
+    "test_mse": 1.6126125071843465,
+    "test_rmse": 1.2698868088079136,
+    "test_mae": 0.9788892415364583,
+    "train_time": 105.62636303901672,
+    "n_parameters": 256580,
+    "config": {}
+  },
+  {
+    "model_name": "AMFormer",
+    "dataset_name": "mixed_type",
+    "train_mse": 4.169835567474365,
+    "val_mse": 3.7597734991709393,
+    "test_mse": 4.273632304509481,
+    "test_rmse": 2.06727654282379,
+    "test_mae": 1.6335150553385416,
+    "train_time": 84.0694580078125,
+    "n_parameters": 256580,
+    "config": {}
   }
 ]

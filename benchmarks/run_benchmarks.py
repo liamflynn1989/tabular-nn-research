@@ -21,7 +21,7 @@ import torch
 from benchmarks.runner import BenchmarkRunner
 from benchmarks.utils import format_results_table, format_leaderboard, save_results
 
-from models import TabM, TabKANet, TemporalTabularModel, TabR, MLPPLR, compute_bins, iLTM
+from models import TabM, TabKANet, TemporalTabularModel, TabR, MLPPLR, compute_bins, iLTM, AMFormer
 from models.base import MLP
 
 
@@ -119,6 +119,27 @@ def create_model_factories():
             task="regression",
         )
 
+    def make_amformer(info):
+        """AMFormer: Arithmetic Feature Interaction Transformer (AAAI 2024).
+        
+        Uses parallel additive and multiplicative attention to capture
+        both sum and product feature interactions. Excellent for data
+        with polynomial relationships (like financial ratios/products).
+        """
+        return AMFormer(
+            d_in=info.n_numerical,
+            d_out=1,
+            d_model=64,
+            n_heads=4,
+            n_layers=3,
+            d_ff_mult=4.0,
+            dropout=0.1,
+            use_multiplicative=True,
+            use_token_descent=True,
+            n_prompts=4,
+            task="regression",
+        )
+
     return {
         "MLP": make_mlp,
         "TabM": make_tabm,
@@ -127,6 +148,7 @@ def create_model_factories():
         "TabR": make_tabr,
         "MLPPLR": make_mlpplr,
         "iLTM": make_iltm,
+        "AMFormer": make_amformer,
     }
 
 

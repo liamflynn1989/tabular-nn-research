@@ -15,6 +15,7 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 | Temporal | 1.1297 | 0.8741 | **1.1896** | **0.6139** | 2.0644 | **1.1743** |
 | MLPPLR | 1.6656 | **0.7486** | 1.1740 | 1.2236 | 1.9743 | 1.3572 |
 | iLTM | 1.4536 | 1.0963 | 2.0272 | 1.4341 | 2.1780 | 1.6379 |
+| AMFormer | 4.9464 | 1.2469 | 1.9025 | 1.2699 | 2.0673 | 2.2866 |
 
 ### Leaderboard
 
@@ -26,7 +27,8 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 | 4 | MLPPLR | 1.3572 | Best on nonlinear & high-dim data |
 | 5 | iLTM | 1.6379 | Tree embeddings + retrieval (simplified) |
 | 6 | TabKANet | 1.7475 | Needs tuning |
-| 7 | TabR | 2.3602 | Best on friedman, struggles with high-dim |
+| 7 | AMFormer | 2.2866 | Arithmetic attention, needs tuning |
+| 8 | TabR | 2.3602 | Best on friedman, struggles with high-dim |
 
 **Key findings:**
 - **Temporal** model excels on datasets with temporal structure and high-dimensional data
@@ -36,6 +38,7 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 - **MLP** baseline remains competitive, especially on simpler datasets
 - **iLTM** (simplified) shows the benefit of tree embeddings for structured data - full pretrained version available at https://github.com/AI-sandbox/iLTM
 - **TabKANet** underperforms on these synthetic benchmarks (may need hyperparameter tuning)
+- **AMFormer** introduces multiplicative attention for arithmetic feature interactions, but struggles on friedman dataset - may need tuning for specific domains
 
 ## Implemented Models
 
@@ -107,7 +110,25 @@ An integrated tabular foundation model that unifies tree-derived embeddings, dim
 
 ⚠️ **Note:** This implementation is a simplified version without the meta-trained hypernetwork weights. For the full pretrained model achieving state-of-the-art results, see: https://github.com/AI-sandbox/iLTM
 
-### 6. On Embeddings for Numerical Features (NeurIPS 2022)
+### 7. AMFormer: Arithmetic Feature Interaction Transformer (AAAI 2024)
+**Paper:** [arXiv:2402.02334](https://arxiv.org/abs/2402.02334)
+
+Introduces parallel additive AND multiplicative attention mechanisms to capture both sum-based and product-based feature interactions. The key insight is that standard transformers only model additive combinations (weighted sums), but tabular data often has multiplicative relationships (e.g., price × quantity = revenue).
+
+**Key Features:**
+- **Multiplicative Attention:** Computes weighted products of values in log-space, naturally capturing x1 × x2 patterns
+- **Parallel Attention:** Both additive and multiplicative branches with learnable mixing
+- **Token Descent:** Progressive feature reduction across layers for efficiency
+- **Prompt Tokens:** Learnable task-conditioning tokens
+
+**HFT/MFT Relevance:**
+- Financial ratios and spreads are naturally multiplicative (bid/ask, P/E ratios)
+- Polynomial terms in technical indicators (squared returns, volatility)
+- Can capture interactions like momentum × volume
+
+⚠️ **Note:** AMFormer underperforms on some synthetic benchmarks, particularly friedman (RMSE 4.95 vs 1.12-1.30 for other models). The multiplicative attention may introduce training instability or require careful hyperparameter tuning. Consider for domains with known multiplicative feature relationships.
+
+### 8. On Embeddings for Numerical Features (NeurIPS 2022)
 **Paper:** [arXiv:2203.05556](https://arxiv.org/abs/2203.05556)
 
 Demonstrates that transforming scalar numerical features into high-dimensional embeddings before mixing in the backbone significantly improves tabular neural network performance. Introduces two key embedding approaches.
@@ -130,6 +151,7 @@ Demonstrates that transforming scalar numerical features into high-dimensional e
 tabular-nn-research/
 ├── models/                     # Model implementations
 │   ├── __init__.py
+│   ├── amformer.py             # AMFormer (arithmetic attention)
 │   ├── base.py                 # Shared base classes (MLP, etc.)
 │   ├── iltm.py                 # iLTM (tree embeddings + hypernetwork + retrieval)
 │   ├── numerical_embeddings.py # MLPPLR (Periodic & PLE embeddings)
@@ -187,7 +209,7 @@ python benchmarks/run_benchmarks.py
 ### Basic Usage
 
 ```python
-from models import TabKANet, TabM, TemporalTabularModel, TabR, MLPPLR, iLTM, compute_bins
+from models import TabKANet, TabM, TemporalTabularModel, TabR, MLPPLR, iLTM, AMFormer, compute_bins
 from data import load_dataset
 import torch
 
@@ -287,6 +309,23 @@ out = mlpplr(x_num)  # Shape: (32, 1)
 # For PLE embeddings, compute bins from training data first:
 # bins = compute_bins(X_train, n_bins=64)
 # mlpplr_ple = MLPPLR(d_in=10, d_out=1, embedding_type="ple", bins=bins)
+
+# AMFormer - Arithmetic attention for multiplicative feature interactions
+amformer = AMFormer(
+    d_in=10,
+    d_out=1,
+    d_model=64,
+    n_heads=4,
+    n_layers=3,
+    use_multiplicative=True,  # Enable multiplicative attention
+    use_token_descent=True,   # Reduce tokens across layers
+    n_prompts=4,              # Learnable prompt tokens
+)
+out = amformer(x_num)  # Shape: (32, 1)
+
+# Get attention weights for interpretability
+attn_weights = amformer.get_attention_weights(x_num)
+# Returns list of (additive_weights, multiplicative_weights) per layer
 ```
 
 ## Adding New Models
@@ -364,6 +403,13 @@ When implementing a new paper/model, follow these steps:
   author={Yury Gorishniy and Ivan Rubachev and Artem Babenko},
   booktitle={NeurIPS},
   year={2022}
+}
+
+@inproceedings{cheng2024amformer,
+  title={Arithmetic Feature Interaction Is Necessary for Deep Tabular Learning},
+  author={Yi Cheng and Renjun Hu and Haochao Ying and Xing Shi and Jian Wu and Wei Lin},
+  booktitle={AAAI},
+  year={2024}
 }
 ```
 
