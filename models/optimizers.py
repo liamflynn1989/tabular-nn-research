@@ -9,7 +9,7 @@ and specialized optimizers.
 import torch
 import torch.nn as nn
 from typing import Any, Dict, List, Optional
-from muon import Muon
+# from muon_optimizer import Muon  # Temporarily disabled
 import torch_optimizer as optim
 
 
@@ -53,40 +53,40 @@ def get_adamw(
     )
 
 
-def get_muon(
-    model: nn.Module,
-    lr: float = 1e-2,
-    momentum: float = 0.95,
-    weight_decay: float = 0.0,
-    **kwargs
-) -> Muon:
-    """
-    Muon optimizer - momentum with orthogonalization.
-    
-    Muon uses Newton-Schulz iteration to orthogonalize momentum, which can
-    provide more stable and faster convergence than standard momentum methods.
-    
-    Key advantages for tabular data:
-    - More stable convergence than standard momentum
-    - Can handle ill-conditioned problems better
-    - Good for models with many parameters relative to data size
-    
-    Args:
-        model: PyTorch model
-        lr: Learning rate
-        momentum: Momentum coefficient
-        weight_decay: Weight decay coefficient
-        
-    Returns:
-        Muon optimizer instance
-    """
-    return Muon(
-        list(model.parameters()),
-        lr=lr,
-        momentum=momentum,
-        weight_decay=weight_decay,
-        **kwargs
-    )
+# def get_muon(
+#     model: nn.Module,
+#     lr: float = 1e-2,
+#     momentum: float = 0.95,
+#     weight_decay: float = 0.0,
+#     **kwargs
+# ) -> Muon:
+#     """
+#     Muon optimizer - momentum with orthogonalization.
+#     
+#     Muon uses Newton-Schulz iteration to orthogonalize momentum, which can
+#     provide more stable and faster convergence than standard momentum methods.
+#     
+#     Key advantages for tabular data:
+#     - More stable convergence than standard momentum
+#     - Can handle ill-conditioned problems better
+#     - Good for models with many parameters relative to data size
+#     
+#     Args:
+#         model: PyTorch model
+#         lr: Learning rate
+#         momentum: Momentum coefficient
+#         weight_decay: Weight decay coefficient
+#         
+#     Returns:
+#         Muon optimizer instance
+#     """
+#     return Muon(
+#         list(model.parameters()),
+#         lr=lr,
+#         momentum=momentum,
+#         weight_decay=weight_decay,
+#         **kwargs
+#     )
 
 
 def get_shampoo(
@@ -183,7 +183,7 @@ def get_novograd(
 # Registry of available optimizers
 OPTIMIZER_REGISTRY = {
     "adamw": get_adamw,
-    "muon": get_muon,
+    # "muon": get_muon,  # Temporarily disabled
     "shampoo": get_shampoo,
     "novograd": get_novograd,
 }
@@ -230,11 +230,11 @@ def get_optimizer_info() -> Dict[str, Dict[str, str]]:
             "best_for": "General purpose, most tabular architectures",
             "key_features": "Adaptive learning rates, effective regularization"
         },
-        "muon": {
-            "description": "Momentum with orthogonalization for stable convergence",
-            "best_for": "Ill-conditioned problems, many parameters vs data",
-            "key_features": "Orthogonalized momentum, stable convergence"
-        },
+        # "muon": {
+        #     "description": "Momentum with orthogonalization for stable convergence",
+        #     "best_for": "Ill-conditioned problems, many parameters vs data",
+        #     "key_features": "Orthogonalized momentum, stable convergence"
+        # },
         "shampoo": {
             "description": "Second-order method with efficient preconditioning",
             "best_for": "Different feature scales, high-dimensional sparse data",
