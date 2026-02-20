@@ -9,13 +9,14 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 | Model | friedman | nonlinear | high_dim | temporal | mixed | Avg |
 |-------|----------|-----------|----------|----------|-------|------|
 | MLP | 1.2291 | 0.8576 | 1.3678 | 1.2371 | 1.9788 | 1.3341 |
-| TabM | 1.1466 | 0.8396 | 1.4507 | 1.2395 | **1.9651** | 1.3283 |
+| TabM | 1.1466 | 0.8396 | 1.4507 | 1.2395 | 1.9651 | 1.3283 |
 | TabKANet | 1.2948 | 1.1329 | 2.6319 | 1.3976 | 2.2801 | 1.7475 |
 | TabR | **1.1165** | 0.7708 | 6.6134 | 1.2450 | 2.0553 | 2.3602 |
 | Temporal | 1.1297 | 0.8741 | **1.1896** | **0.6139** | 2.0644 | **1.1743** |
 | MLPPLR | 1.6656 | **0.7486** | 1.1740 | 1.2236 | 1.9743 | 1.3572 |
 | iLTM | 1.4536 | 1.0963 | 2.0272 | 1.4341 | 2.1780 | 1.6379 |
 | AMFormer | 4.9464 | 1.2469 | 1.9025 | 1.2699 | 2.0673 | 2.2866 |
+| CAIRO | 2.5461 | 1.4419 | 1.5799 | 1.2175 | **1.9359** | 1.7443 |
 
 ### Leaderboard
 
@@ -26,9 +27,10 @@ Performance comparison on synthetic regression datasets (Test RMSE, lower is bet
 | 🥉 | MLP | 1.3341 | Strong baseline |
 | 4 | MLPPLR | 1.3572 | Best on nonlinear & high-dim data |
 | 5 | iLTM | 1.6379 | Tree embeddings + retrieval (simplified) |
-| 6 | TabKANet | 1.7475 | Needs tuning |
-| 7 | AMFormer | 2.2866 | Arithmetic attention, needs tuning |
-| 8 | TabR | 2.3602 | Best on friedman, struggles with high-dim |
+| 6 | CAIRO | 1.7443 | Best on mixed_type; robust to heavy-tailed noise |
+| 7 | TabKANet | 1.7475 | Needs tuning |
+| 8 | AMFormer | 2.2866 | Arithmetic attention, needs tuning |
+| 9 | TabR | 2.3602 | Best on friedman, struggles with high-dim |
 
 **Key findings:**
 - **Temporal** model excels on datasets with temporal structure and high-dimensional data
@@ -145,6 +147,32 @@ Demonstrates that transforming scalar numerical features into high-dimensional e
 - Piecewise linear bins adapt to different price/volume regimes automatically
 - Low computational overhead - suitable for real-time inference
 
+### 9. CAIRO: Calibrate After Initial Rank Ordering (arXiv 2026)
+**Paper:** [arXiv:2602.14440](https://arxiv.org/abs/2602.14440)
+
+CAIRO decouples regression into two stages: first learning to rank examples using scale-invariant loss, then recovering the target scale via isotonic regression. This separation makes the model inherently robust to outliers and heavy-tailed noise.
+
+**Key Ideas:**
+- **Stage 1 - Ranking:** Learn a scoring function via scale-invariant pairwise loss (RankNet, Gini covariance)
+- **Stage 2 - Calibration:** Apply isotonic regression to map scores back to target scale
+- **Scale Invariance:** Ranking losses are invariant to target magnitude, so outliers don't dominate gradients
+- **Log-Sigmoid Smoothing:** The pairwise loss saturates for large errors, naturally capping outlier influence
+
+**Key Features:**
+- **RankNet Loss:** Pairwise loss with uniform weights (optimizes Kendall's τ)
+- **RankNet-GiniW:** Pairwise loss weighted by |y_i - y_j| (optimizes Gini covariance)
+- **GiniNet-SoftRank:** Pointwise loss using differentiable softrank (O(n log n) complexity)
+- **Isotonic Calibration:** Non-parametric monotone regression recovers true scale
+
+**HFT/MFT Relevance:**
+- Financial returns have **fat-tailed distributions** with frequent outliers
+- **Heteroskedastic noise** is common (volatility clustering)
+- **Ranking signals** often matters more than exact predictions (signal ranking for portfolio construction)
+- Robust to **regime changes** where scale shifts but relative ordering remains stable
+- Particularly effective for **limit order book** features with extreme values
+
+⚠️ **Note:** CAIRO shines in heavy-tailed and heteroskedastic regimes. On standard synthetic benchmarks with Gaussian noise, simpler methods like MLP may suffice. Consider CAIRO when your target variable has outliers or heavy tails.
+
 ## Project Structure
 
 ```
@@ -153,6 +181,7 @@ tabular-nn-research/
 │   ├── __init__.py
 │   ├── amformer.py             # AMFormer (arithmetic attention)
 │   ├── base.py                 # Shared base classes (MLP, etc.)
+│   ├── cairo.py                # CAIRO (rank-then-calibrate, robust to outliers)
 │   ├── iltm.py                 # iLTM (tree embeddings + hypernetwork + retrieval)
 │   ├── numerical_embeddings.py # MLPPLR (Periodic & PLE embeddings)
 │   ├── tabkanet.py             # TabKANet (KAN + Transformer)
@@ -326,6 +355,34 @@ out = amformer(x_num)  # Shape: (32, 1)
 # Get attention weights for interpretability
 attn_weights = amformer.get_attention_weights(x_num)
 # Returns list of (additive_weights, multiplicative_weights) per layer
+
+# CAIRO - Robust regression via rank-then-calibrate (handles outliers/heavy tails)
+from models import CAIRO
+
+cairo = CAIRO(
+    d_in=10,
+    d_out=1,
+    n_blocks=2,
+    d_block=64,
+    loss_type="ranknet",  # or "ranknet_gini", "gini_softrank"
+)
+
+# Stage 1: Train with ranking loss
+cairo.train()
+scores = cairo.get_scores(x_num)
+loss = cairo.compute_ranking_loss(scores, y)
+# loss.backward() and optimizer.step() in training loop
+
+# Stage 2: Fit calibrator on training data (after Stage 1 training)
+cairo.fit_calibrator(x_num, y)
+
+# Inference with calibrated predictions
+cairo.eval()
+predictions = cairo(x_num)  # Shape: (32, 1)
+
+# Get ranking quality metrics
+metrics = cairo.get_ranking_metrics(x_num, y)
+print(f"Kendall's tau: {metrics['kendall_tau']:.3f}")
 ```
 
 ## Adding New Models
@@ -410,6 +467,13 @@ When implementing a new paper/model, follow these steps:
   author={Yi Cheng and Renjun Hu and Haochao Ying and Xing Shi and Jian Wu and Wei Lin},
   booktitle={AAAI},
   year={2024}
+}
+
+@article{vanhems2026cairo,
+  title={CAIRO: Decoupling Order from Scale in Regression},
+  author={Vanhems, Harri and Zhao, Yue and Shi, Peng and Yang, Archer Y.},
+  journal={arXiv preprint arXiv:2602.14440},
+  year={2026}
 }
 ```
 

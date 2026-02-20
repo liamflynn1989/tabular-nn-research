@@ -38,6 +38,14 @@ from .amformer import (
     TokenDescent,
     create_amformer,
 )
+from .cairo import (
+    CAIRO,
+    CAIROScorer,
+    ranknet_loss,
+    gini_softrank_loss,
+    softrank,
+    create_cairo,
+)
 
 __all__ = [
     "TabularModel",
@@ -73,4 +81,11 @@ __all__ = [
     "AMFormerLayer",
     "TokenDescent",
     "create_amformer",
+    # CAIRO (arXiv 2602.14440)
+    "CAIRO",
+    "CAIROScorer",
+    "ranknet_loss",
+    "gini_softrank_loss",
+    "softrank",
+    "create_cairo",
 ]

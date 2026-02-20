@@ -164,6 +164,9 @@ class BenchmarkRunner:
         """Train for one epoch."""
         model.train()
         total_loss = 0
+        
+        # Check if this is a CAIRO model (uses ranking loss instead of MSE)
+        is_cairo = hasattr(model, 'compute_ranking_loss') and hasattr(model, 'get_scores')
 
         for batch in dataloader:
             x_num = batch['x_num'].to(self.device)
@@ -178,20 +181,28 @@ class BenchmarkRunner:
             optimizer.zero_grad()
 
             # Handle different model interfaces
-            if hasattr(model, 'time_encoder') and time_idx is not None:
+            if is_cairo:
+                # CAIRO: use ranking loss instead of MSE
+                scores = model.get_scores(x_num)
+                loss = model.compute_ranking_loss(scores, y.squeeze(-1))
+            elif hasattr(model, 'time_encoder') and time_idx is not None:
                 pred = model(x_num, time_idx)
+                loss = criterion(pred, y)
             elif x_cat is not None and hasattr(model, 'cat_embeddings'):
                 pred = model(x_num, x_cat)
+                loss = criterion(pred, y)
             elif hasattr(model, '_add_candidates'):
                 # TabR: pass labels for candidate accumulation
                 pred = model(x_num, y_for_candidates=y)
+                loss = criterion(pred, y)
             elif hasattr(model, '_is_setup') and model._is_setup:
                 # iLTM and similar models that are already setup
                 pred = model(x_num)
+                loss = criterion(pred, y)
             else:
                 pred = model(x_num)
+                loss = criterion(pred, y)
 
-            loss = criterion(pred, y)
             loss.backward()
             optimizer.step()
 
@@ -321,6 +332,21 @@ class BenchmarkRunner:
 
         # Load best model and evaluate on test set
         model.load_state_dict(best_state)
+        
+        # CAIRO: fit the isotonic calibrator after Stage 1 training
+        if hasattr(model, 'fit_calibrator') and hasattr(model, '_is_calibrated'):
+            # Collect all training data for calibration
+            all_x = []
+            all_y = []
+            for batch in train_loader:
+                all_x.append(batch['x_num'])
+                all_y.append(batch['y'])
+            X_train = torch.cat(all_x, dim=0).to(self.device)
+            y_train = torch.cat(all_y, dim=0).squeeze(-1)
+            model.fit_calibrator(X_train, y_train)
+            if self.verbose:
+                print("  Fitted isotonic calibrator (Stage 2)")
+        
         test_mse, test_rmse, test_mae = self._evaluate(model, test_loader, criterion)
 
         result = BenchmarkResult(

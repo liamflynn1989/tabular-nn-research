@@ -21,7 +21,7 @@ import torch
 from benchmarks.runner import BenchmarkRunner
 from benchmarks.utils import format_results_table, format_leaderboard, save_results
 
-from models import TabM, TabKANet, TemporalTabularModel, TabR, MLPPLR, compute_bins, iLTM, AMFormer
+from models import TabM, TabKANet, TemporalTabularModel, TabR, MLPPLR, compute_bins, iLTM, AMFormer, CAIRO
 from models.base import MLP
 
 
@@ -140,6 +140,24 @@ def create_model_factories():
             task="regression",
         )
 
+    def make_cairo(info):
+        """CAIRO: Calibrate After Initial Rank Ordering (arXiv 2602.14440).
+        
+        Two-stage regression: learns ranking via scale-invariant loss,
+        then calibrates with isotonic regression. Robust to outliers
+        and heavy-tailed noise.
+        """
+        return CAIRO(
+            d_in=info.n_numerical,
+            d_out=1,
+            n_blocks=2,
+            d_block=64,
+            dropout=0.0,
+            loss_type="ranknet",  # Most robust variant
+            sigma=1.0,
+            task="regression",
+        )
+
     return {
         "MLP": make_mlp,
         "TabM": make_tabm,
@@ -149,6 +167,7 @@ def create_model_factories():
         "MLPPLR": make_mlpplr,
         "iLTM": make_iltm,
         "AMFormer": make_amformer,
+        "CAIRO": make_cairo,
     }
 
 

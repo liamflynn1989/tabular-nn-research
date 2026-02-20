@@ -478,5 +478,65 @@
     "train_time": 84.0694580078125,
     "n_parameters": 256580,
     "config": {}
+  },
+  {
+    "model_name": "CAIRO",
+    "dataset_name": "friedman",
+    "train_mse": 0.15331568462508066,
+    "val_mse": 120.03253544108073,
+    "test_mse": 6.482790966033935,
+    "test_rmse": 2.546132550758883,
+    "test_mae": 1.9340919189453125,
+    "train_time": 0.3884720802307129,
+    "n_parameters": 4929,
+    "config": {}
+  },
+  {
+    "model_name": "CAIRO",
+    "dataset_name": "nonlinear_interaction",
+    "train_mse": 0.2410882966859,
+    "val_mse": 3.08564129447937,
+    "test_mse": 2.079127016067505,
+    "test_rmse": 1.4419178256986438,
+    "test_mae": 1.0178198649088541,
+    "train_time": 0.24109482765197754,
+    "n_parameters": 5249,
+    "config": {}
+  },
+  {
+    "model_name": "CAIRO",
+    "dataset_name": "high_dimensional",
+    "train_mse": 0.035377632826566696,
+    "val_mse": 5.96872458521525,
+    "test_mse": 2.496079382578532,
+    "test_rmse": 1.5798985355327513,
+    "test_mae": 1.2595100911458332,
+    "train_time": 0.4514281749725342,
+    "n_parameters": 10689,
+    "config": {}
+  },
+  {
+    "model_name": "CAIRO",
+    "dataset_name": "temporal_drift",
+    "train_mse": 0.1329956730561597,
+    "val_mse": 1.5439342393875122,
+    "test_mse": 1.482334379196167,
+    "test_rmse": 1.2175115519764759,
+    "test_mae": 0.9420775960286458,
+    "train_time": 0.45499205589294434,
+    "n_parameters": 4929,
+    "config": {}
+  },
+  {
+    "model_name": "CAIRO",
+    "dataset_name": "mixed_type",
+    "train_mse": 0.20442167669534683,
+    "val_mse": 4.867036153157552,
+    "test_mse": 3.7478292179107666,
+    "test_rmse": 1.9359310984409457,
+    "test_mae": 1.5643685709635418,
+    "train_time": 0.9680781364440918,
+    "n_parameters": 4929,
+    "config": {}
   }
 ]
